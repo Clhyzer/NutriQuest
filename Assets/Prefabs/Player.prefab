@@ -130,7 +130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cam: {fileID: 8242273655002308264}
-  moveSpeed: 5
+  moveSpeed: 10
   jumpHeight: 2
   gravity: -20
   sensitivityX: 100
