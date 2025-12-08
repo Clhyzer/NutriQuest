@@ -13,6 +13,10 @@ public class FoodPlate : MonoBehaviour
     public int slotsPerLayer = 4;               // 4 titik per layer
     public float slotSpacing = 0.08f;           // jarak dari pusat untuk tiap slot
     private Vector3[] slotOffsets;
+    
+    [Header("Capacity")]
+    [Tooltip("Maximum number of items on the plate before it clears automatically")]
+    public int maxItems = 4;
 
     private void Start()
     {
@@ -60,6 +64,8 @@ public class FoodPlate : MonoBehaviour
         // tambahkan ke list setelah pos ditentukan
         foodsOnPlate.Add(food);
 
+        Debug.Log($"FoodPlate.AddFood: added '{food.name}' -> count={foodsOnPlate.Count}");
+
         // update currentHeight optional (dipakai hanya untuk referensi)
         currentHeight = (layer + 1) * food.heightOffset;
 
@@ -75,14 +81,30 @@ public class FoodPlate : MonoBehaviour
         {
             scoreSystem.AddScore(food);
         }
+
+        // Jika jumlah item tepat mencapai batas, hapus semua item di plate
+        if (foodsOnPlate.Count == maxItems)
+        {
+            ClearPlate();
+        }
     }
 
     public void ClearPlate()
     {
-        foreach (FoodItem food in foodsOnPlate)
+        Debug.Log($"FoodPlate.ClearPlate: clearing {foodsOnPlate.Count} items");
+        for (int i = foodsOnPlate.Count - 1; i >= 0; i--)
         {
+            FoodItem food = foodsOnPlate[i];
             if (food != null)
-                Destroy(food.gameObject);
+            {
+                // Pastikan menghancurkan root GameObject dari item (jika FoodItem berada di child)
+                GameObject root = food.transform.root != null ? food.transform.root.gameObject : food.gameObject;
+                Debug.Log($" - Destroying root '{root.name}' for component '{food.name}'");
+                if (Application.isPlaying)
+                    Destroy(root);
+                else
+                    DestroyImmediate(root);
+            }
         }
 
         foodsOnPlate.Clear();

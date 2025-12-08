@@ -1,32 +1,33 @@
-// ...existing code...
 using UnityEngine;
 using UnityEngine.UI;
 
 public class PlayerFoodPickup : MonoBehaviour
 {
     public float pickupRange = 3f;
-    public float sphereRadius = 0.25f;          // buat sedikit longgar supaya mudah kena
+    public float sphereRadius = 0.25f; // buat sedikit longgar supaya mudah kena
+
     public Transform holdPoint;
     public LayerMask foodLayer;
     public LayerMask plateLayer;
+
     public Camera cam;
-    public GameObject interactIcon;             // assign UI Image or GameObject (ikon "E")
-    public float loseTargetDelay = 0.12f;       // delay kecil untuk menghindari berkedip
+    public GameObject interactIcon; // assign UI Image or GameObject (ikon "E")
+
+    public float loseTargetDelay = 0.12f; // delay kecil untuk menghindari berkedip
 
     private GameObject heldObject;
     private bool isHolding = false;
 
     // aim detection
     private GameObject aimedFood;
+    private FoodPlate aimedPlate;
+
     private float lostTimer = 0f;
 
     void Start()
     {
-        if (cam == null)
-            cam = Camera.main;
-
-        if (interactIcon != null)
-            interactIcon.SetActive(false);
+        if (cam == null) cam = Camera.main;
+        if (interactIcon != null) interactIcon.SetActive(false);
     }
 
     void Update()
@@ -41,54 +42,85 @@ public class PlayerFoodPickup : MonoBehaviour
 
     void DetectAimedFood()
     {
-        if (cam == null)
-            return;
+        if (cam == null) return;
 
         Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
         RaycastHit hit;
-        GameObject found = null;
 
-        // SphereCast agar lebih mudah mengenai objek yang sedikit meleset
+        GameObject foundFood = null;
+        FoodPlate foundPlate = null;
+
+        // SphereCast cek food
         if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, foodLayer, QueryTriggerInteraction.Ignore))
         {
             FoodItem food = hit.collider.GetComponentInParent<FoodItem>();
-            if (food != null)
-                found = food.gameObject;
+            if (food != null) foundFood = food.gameObject;
         }
 
-        if (found != aimedFood)
+        // Jika sedang memegang item, cek plate
+        if (isHolding)
         {
-            if (found == null)
+            if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, plateLayer, QueryTriggerInteraction.Ignore))
             {
-                // tunda sebelum benar-benar menghilangkan target (hindari flicker singkat)
-                lostTimer += Time.deltaTime;
-                if (lostTimer >= loseTargetDelay)
-                {
-                    aimedFood = null;
-                    if (interactIcon != null && interactIcon.activeSelf)
-                        interactIcon.SetActive(false);
-                }
+                foundPlate = hit.collider.GetComponentInParent<FoodPlate>();
+            }
+        }
+
+        // Prioritas: jika sedang pegang → plate, kalau tidak → food
+        if (foundPlate != null)
+        {
+            if (aimedPlate != foundPlate)
+            {
+                aimedPlate = foundPlate;
+                aimedFood = null;
+                lostTimer = 0f;
+
+                if (interactIcon != null && !interactIcon.activeSelf)
+                    interactIcon.SetActive(true);
             }
             else
             {
-                // set target baru langsung
-                aimedFood = found;
                 lostTimer = 0f;
+            }
+        }
+        else if (foundFood != null)
+        {
+            if (aimedFood != foundFood)
+            {
+                aimedFood = foundFood;
+                aimedPlate = null;
+                lostTimer = 0f;
+
                 if (interactIcon != null && !interactIcon.activeSelf)
                     interactIcon.SetActive(true);
+            }
+            else
+            {
+                lostTimer = 0f;
             }
         }
         else
         {
-            // jika masih sama, reset timer
-            lostTimer = 0f;
+            // tidak ada target
+            if (aimedFood != null || aimedPlate != null)
+            {
+                lostTimer += Time.deltaTime;
+
+                if (lostTimer >= loseTargetDelay)
+                {
+                    aimedFood = null;
+                    aimedPlate = null;
+
+                    if (interactIcon != null && interactIcon.activeSelf)
+                        interactIcon.SetActive(false);
+                }
+            }
         }
     }
 
     void TryPickup()
     {
-        if (aimedFood == null)
-            return;
+        if (aimedFood == null) return;
 
         if (Input.GetKeyDown(KeyCode.E))
             PickUpObject(aimedFood);
@@ -135,15 +167,13 @@ public class PlayerFoodPickup : MonoBehaviour
 
     void PlaceToPlate(FoodPlate plate)
     {
-        if (heldObject == null)
-            return;
+        if (heldObject == null) return;
 
         FoodItem food = heldObject.GetComponent<FoodItem>();
-
         if (food != null)
             plate.AddFood(food);
 
-        // detach dan reset state
+        // detach dan reset
         heldObject.transform.SetParent(null);
         heldObject = null;
         isHolding = false;
