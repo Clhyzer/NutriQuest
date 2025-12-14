@@ -12,11 +12,15 @@ public class StartCountdown : MonoBehaviour
     public float countdownTime = 3f;
 
     [Header("Player")]
-    public PlayerMotor playerMovement;  // <-- drag script movement ke sini
+    public PlayerMotor playerMovement;
+
+    [Header("Sound Effects")]
+    public AudioSource audioSource;
+    public AudioClip countdownTickSFX; // 3,2,1
+    public AudioClip goSFX;            // GO!
 
     void Start()
     {
-        // Nonaktifkan movement saat start & countdown
         if (playerMovement != null)
             playerMovement.enabled = false;
 
@@ -28,10 +32,8 @@ public class StartCountdown : MonoBehaviour
 
     System.Collections.IEnumerator StartSequence()
     {
-        // Start panel muncul 1 detik
         yield return new WaitForSeconds(1f);
 
-        // Masuk countdown
         startPanel.SetActive(false);
         countdownPanel.SetActive(true);
 
@@ -40,22 +42,27 @@ public class StartCountdown : MonoBehaviour
         while (remaining > 0)
         {
             countdownText.text = Mathf.Ceil(remaining).ToString();
+
+            if (audioSource && countdownTickSFX)
+                audioSource.PlayOneShot(countdownTickSFX);
+
             yield return new WaitForSeconds(1f);
             remaining--;
         }
 
         // GO!
         countdownText.text = "GO!";
+
+        if (audioSource && goSFX)
+            audioSource.PlayOneShot(goSFX);
+
         yield return new WaitForSeconds(0.5f);
 
-        // Sembunyikan panel countdown
         countdownPanel.SetActive(false);
 
-        // Aktifkan movement setelah countdown selesai
         if (playerMovement != null)
             playerMovement.enabled = true;
 
-        // Mulai Gameplay
         GameManager.Instance.StartGame();
     }
 }

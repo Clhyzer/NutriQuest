@@ -4,21 +4,23 @@ using UnityEngine.AI;
 public class RandoomNPC : MonoBehaviour
 {
     private NavMeshAgent agent;
+
+    [Header("Waypoints (urutan penting)")]
     public WaypointNode[] waypoint;
 
     private int currentWaypoint = 0;
-    private float waitCounter = 0f;
-    private bool isWaiting = false;
-    private bool movingForward = true;
 
+    [Header("Animation")]
     public Animator animator;
+
+    private bool isBusy = false;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
 
-        // Pastikan berada di navmesh
+        // Pastikan NPC ada di NavMesh
         NavMeshHit hit;
         if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
             agent.Warp(hit.position);
@@ -29,62 +31,79 @@ public class RandoomNPC : MonoBehaviour
 
     void Update()
     {
-        if (!agent.isOnNavMesh) return;
-
-        // Kalau sedang menunggu, jangan pindah
-        if (isWaiting)
-        {
-            waitCounter += Time.deltaTime;
-            if (waitCounter >= waypoint[currentWaypoint].stopDuration)
-            {
-                isWaiting = false;
-                GoToNextWaypoint();
-            }
-            animator.SetFloat("Speed", 0);
-            return;
-        }
-
-        // Sudah tiba di titik
-        if (!agent.pathPending && agent.remainingDistance <= 0.15f)
-        {
-            WaypointNode node = waypoint[currentWaypoint];
-
-            // Hanya berhenti kalau stopHere = true
-            if (node.stopHere)
-            {
-                isWaiting = true;
-                waitCounter = 0;
-            }
-            else
-            {
-                GoToNextWaypoint();
-            }
-        }
+        if (!agent.isOnNavMesh || isBusy) return;
 
         animator.SetFloat("Speed", agent.velocity.magnitude);
+
+        if (!agent.pathPending && agent.remainingDistance <= 0.15f)
+        {
+            HandleWaypoint(waypoint[currentWaypoint]);
+        }
+    }
+
+    void HandleWaypoint(WaypointNode node)
+    {
+        switch (node.type)
+        {
+            case WaypointType.Shop:
+                StartCoroutine(ShopRoutine(node.stopDuration));
+                break;
+
+            case WaypointType.Cashier:
+                StartCoroutine(CashierRoutine(node.stopDuration));
+                break;
+
+            case WaypointType.Exit:
+                ExitStore();
+                break;
+
+            default:
+                GoToNextWaypoint();
+                break;
+        }
     }
 
     void GoToNextWaypoint()
     {
-        if (movingForward)
-        {
-            currentWaypoint++;
-            if (currentWaypoint >= waypoint.Length)
-            {
-                currentWaypoint = waypoint.Length - 2;
-                movingForward = false;
-            }
-        }
-        else
-        {
-            currentWaypoint--;
-            if (currentWaypoint < 0)
-            {
-                currentWaypoint = 1;
-                movingForward = true;
-            }
-        }
+        currentWaypoint++;
+
+        if (currentWaypoint >= waypoint.Length)
+            currentWaypoint = waypoint.Length - 1;
 
         agent.SetDestination(waypoint[currentWaypoint].transform.position);
+    }
+
+    System.Collections.IEnumerator ShopRoutine(float time)
+    {
+        isBusy = true;
+        agent.isStopped = true;
+        animator.SetFloat("Speed", 0);
+        animator.SetTrigger("PickItem");
+
+        yield return new WaitForSeconds(time);
+
+        agent.isStopped = false;
+        isBusy = false;
+        GoToNextWaypoint();
+    }
+
+    System.Collections.IEnumerator CashierRoutine(float time)
+    {
+        isBusy = true;
+        agent.isStopped = true;
+        animator.SetFloat("Speed", 0);
+        animator.SetTrigger("Pay");
+
+        yield return new WaitForSeconds(time);
+
+        agent.isStopped = false;
+        isBusy = false;
+        GoToNextWaypoint();
+    }
+
+    void ExitStore()
+    {
+        animator.SetFloat("Speed", 0);
+        Destroy(gameObject, 1f);
     }
 }
