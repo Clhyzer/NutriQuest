@@ -13,31 +13,28 @@ public class PlateInteract : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            TryGivePlateToNPC();
-        }
-    }
-
-    void TryGivePlateToNPC()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, npcDetectRadius);
-
-        foreach (Collider col in hits)
-        {
-            NPCPlateReceiver npc = col.GetComponent<NPCPlateReceiver>();
-            if (npc != null && npc.CanReceivePlate())
+            Collider[] hits = Physics.OverlapSphere(transform.position, npcDetectRadius);
+            foreach (Collider col in hits)
             {
-                npc.ReceivePlate();
-                SpawnNewPlate();
-                Destroy(gameObject);
-                return;
+                NPCPlateReceiver npc = col.GetComponent<NPCPlateReceiver>();
+                if (npc != null)
+                {
+                    npc.ReceivePlate();
+                    SpawnNewPlate();
+                    Destroy(gameObject);
+                    return;
+                }
             }
         }
-
-        Debug.Log("Tidak ada NPC di dekat plate");
     }
 
     void SpawnNewPlate()
     {
-        Instantiate(emptyPlatePrefab, spawnPoint.position, spawnPoint.rotation);
+        GameObject newPlate = Instantiate(emptyPlatePrefab, spawnPoint.position, spawnPoint.rotation);
+
+        newPlate.GetComponent<FoodPlate>().progressBar = progressBar;
+        newPlate.GetComponent<PlateInteract>().progressBar = progressBar;
+
+        progressBar.ResetBar();
     }
 }

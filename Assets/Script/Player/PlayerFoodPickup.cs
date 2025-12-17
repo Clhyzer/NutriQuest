@@ -35,9 +35,17 @@ public class PlayerFoodPickup : MonoBehaviour
         DetectAimedFood();
 
         if (!isHolding)
+        {
             TryPickup();
+        }
         else
-            TryPlaceToPlate();
+        {
+            // jika sedang memegang plate -> coba beri ke NPC, jika memegang makanan -> coba tempatkan ke plate
+            if (heldObject != null && heldObject.GetComponent<FoodPlate>() != null)
+                TryGivePlateToNPC();
+            else
+                TryPlaceToPlate();
+        }
     }
 
     void DetectAimedFood()
@@ -50,69 +58,100 @@ public class PlayerFoodPickup : MonoBehaviour
         GameObject foundFood = null;
         FoodPlate foundPlate = null;
 
-        // SphereCast cek food
+        // SphereCast cek food (abaikan makanan yang sudah di-plate)
         if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, foodLayer, QueryTriggerInteraction.Ignore))
         {
             FoodItem food = hit.collider.GetComponentInParent<FoodItem>();
-            if (food != null) foundFood = food.gameObject;
+            if (food != null && food.GetComponentInParent<FoodPlate>() == null) foundFood = food.gameObject;
         }
 
-        // Jika sedang memegang item, cek plate
+        // cek plate selalu (agar bisa diambil ketika penuh)
+        if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, plateLayer, QueryTriggerInteraction.Ignore))
+        {
+            foundPlate = hit.collider.GetComponentInParent<FoodPlate>();
+        }
+
+        // Prioritas: jika sedang pegang item → plate (untuk ditempatkan), kalau tidak pegang → plate hanya jika bisa diambil, kalau tidak → food
         if (isHolding)
         {
-            if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, plateLayer, QueryTriggerInteraction.Ignore))
+            if (foundPlate != null)
             {
-                foundPlate = hit.collider.GetComponentInParent<FoodPlate>();
-            }
-        }
+                if (aimedPlate != foundPlate)
+                {
+                    aimedPlate = foundPlate;
+                    aimedFood = null;
+                    lostTimer = 0f;
 
-        // Prioritas: jika sedang pegang → plate, kalau tidak → food
-        if (foundPlate != null)
-        {
-            if (aimedPlate != foundPlate)
-            {
-                aimedPlate = foundPlate;
-                aimedFood = null;
-                lostTimer = 0f;
-
-                if (interactIcon != null && !interactIcon.activeSelf)
-                    interactIcon.SetActive(true);
+                    if (interactIcon != null && !interactIcon.activeSelf)
+                        interactIcon.SetActive(true);
+                }
+                else
+                {
+                    lostTimer = 0f;
+                }
             }
             else
             {
-                lostTimer = 0f;
-            }
-        }
-        else if (foundFood != null)
-        {
-            if (aimedFood != foundFood)
-            {
-                aimedFood = foundFood;
-                aimedPlate = null;
-                lostTimer = 0f;
-
-                if (interactIcon != null && !interactIcon.activeSelf)
-                    interactIcon.SetActive(true);
-            }
-            else
-            {
-                lostTimer = 0f;
+                // nothing / keep previous until lost
+                if (aimedFood != null || aimedPlate != null)
+                {
+                    lostTimer += Time.deltaTime;
+                    if (lostTimer >= loseTargetDelay)
+                    {
+                        aimedFood = null;
+                        aimedPlate = null;
+                        if (interactIcon != null && interactIcon.activeSelf)
+                            interactIcon.SetActive(false);
+                    }
+                }
             }
         }
         else
         {
-            // tidak ada target
-            if (aimedFood != null || aimedPlate != null)
+            if (foundPlate != null && foundPlate.CanBeTaken())
             {
-                lostTimer += Time.deltaTime;
-
-                if (lostTimer >= loseTargetDelay)
+                if (aimedPlate != foundPlate)
                 {
+                    aimedPlate = foundPlate;
                     aimedFood = null;
-                    aimedPlate = null;
+                    lostTimer = 0f;
 
-                    if (interactIcon != null && interactIcon.activeSelf)
-                        interactIcon.SetActive(false);
+                    if (interactIcon != null && !interactIcon.activeSelf)
+                        interactIcon.SetActive(true);
+                }
+                else
+                {
+                    lostTimer = 0f;
+                }
+            }
+            else if (foundFood != null)
+            {
+                if (aimedFood != foundFood)
+                {
+                    aimedFood = foundFood;
+                    aimedPlate = null;
+                    lostTimer = 0f;
+
+                    if (interactIcon != null && !interactIcon.activeSelf)
+                        interactIcon.SetActive(true);
+                }
+                else
+                {
+                    lostTimer = 0f;
+                }
+            }
+            else
+            {
+                if (aimedFood != null || aimedPlate != null)
+                {
+                    lostTimer += Time.deltaTime;
+                    if (lostTimer >= loseTargetDelay)
+                    {
+                        aimedFood = null;
+                        aimedPlate = null;
+                        if (interactIcon != null && interactIcon.activeSelf)
+                            interactIcon.SetActive(false);
+                    }
                 }
             }
         }
@@ -120,10 +159,21 @@ public class PlayerFoodPickup : MonoBehaviour
 
     void TryPickup()
     {
-        if (aimedFood == null) return;
-
         if (Input.GetKeyDown(KeyCode.E))
-            PickUpObject(aimedFood);
+        {
+            if (aimedFood != null)
+            {
+                PickUpObject(aimedFood);
+                return;
+            }
+
+            if (aimedPlate != null && aimedPlate.CanBeTaken())
+            {
+                PickUpObject(aimedPlate.gameObject);
+                aimedPlate = null;
+                return;
+            }
+        }
     }
 
     void TryPlaceToPlate()
@@ -146,10 +196,44 @@ public class PlayerFoodPickup : MonoBehaviour
         }
     }
 
+    void TryGivePlateToNPC()
+    {
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Collider[] hits = Physics.OverlapSphere(transform.position, pickupRange);
+
+            foreach (Collider col in hits)
+            {
+                NPCPlateReceiver npc = col.GetComponent<NPCPlateReceiver>();
+                if (npc != null && npc.CanReceivePlate())
+                {
+                    npc.ReceivePlate();
+                    Destroy(heldObject);
+                    heldObject = null;
+                    isHolding = false;
+
+                    if (interactIcon != null && interactIcon.activeSelf)
+                        interactIcon.SetActive(false);
+
+                    return;
+                }
+            }
+
+            Debug.Log("Tidak menemukan NPC yang menerima plate!");
+        }
+    }
+
     void PickUpObject(GameObject obj)
     {
         heldObject = obj;
         isHolding = true;
+
+        // jika yang diambil adalah plate, beri tahu plate untuk spawn pengganti
+        var plate = heldObject.GetComponent<FoodPlate>();
+        if (plate != null)
+        {
+            plate.OnTakenByPlayer();
+        }
 
         heldObject.transform.SetParent(holdPoint);
         heldObject.transform.localPosition = Vector3.zero;
@@ -161,6 +245,7 @@ public class PlayerFoodPickup : MonoBehaviour
             rb.useGravity = false;
         }
 
+        // clear aim icon
         if (interactIcon != null && interactIcon.activeSelf)
             interactIcon.SetActive(false);
     }
@@ -171,10 +256,11 @@ public class PlayerFoodPickup : MonoBehaviour
 
         FoodItem food = heldObject.GetComponent<FoodItem>();
         if (food != null)
+        {
             plate.AddFood(food);
+        }
 
-        // detach dan reset
-        heldObject.transform.SetParent(null);
+        // reset held state (food now parented to the plate)
         heldObject = null;
         isHolding = false;
     }

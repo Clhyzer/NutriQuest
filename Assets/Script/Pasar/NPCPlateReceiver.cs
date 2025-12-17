@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class NPCPlateReceiver : MonoBehaviour
 {
-    private bool playerNear = false;
+    bool received = false;
+    bool playerNear = false;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -18,13 +19,14 @@ public class NPCPlateReceiver : MonoBehaviour
 
     public bool CanReceivePlate()
     {
-        return playerNear;
+        return playerNear && !received;
     }
 
     public void ReceivePlate()
     {
+        if (received) return;
+        received = true;
+        GameManager1.Instance.ServeNPC();
         Debug.Log($"{gameObject.name} menerima plate");
-
-        GameManager1.Instance.GivePlateToNPC();
     }
-}
+} 

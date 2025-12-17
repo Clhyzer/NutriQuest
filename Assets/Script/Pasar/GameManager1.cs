@@ -4,24 +4,23 @@ using TMPro;
 public class GameManager1 : MonoBehaviour
 {
     public static GameManager1 Instance;
-
     public int npcTarget = 1;
     public int npcServed = 0;
     public TextMeshProUGUI questText;
 
-    private void Awake()
+    void Awake()
     {
         Instance = this;
-        UpdateQuestText();
+        UpdateText();
     }
 
-    public void GivePlateToNPC()
+    public void ServeNPC()
     {
         npcServed++;
-        UpdateQuestText();
+        UpdateText();
     }
 
-    void UpdateQuestText()
+    void UpdateText()
     {
         questText.text = $"Serve NPC: {npcServed}/{npcTarget}";
     }
