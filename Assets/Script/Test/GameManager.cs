@@ -16,16 +16,29 @@ public class GameManager : MonoBehaviour
     [Header("Delay Settings")]
     public float delayAfterFinish = 2f;
 
-    [Header("UI")]
+    [Header("UI - In Game")]
     public Slider barSlider;
     public Text timeText;
-    public GameObject endGameUI;
-    public Text endTimeText;
-    public Text endPointText;
+
+    [Header("UI - WIN")]
+    public GameObject winPanel;
+    public Text winTimeText;
+    public Text winPointText;
+
+    [Header("UI - LOSE")]
+    public GameObject losePanel;
+    public Text loseTimeText;
+    public Text losePointText;
+
+    [Header("SFX")]
+    public AudioSource audioSource;
+    public AudioClip winSFX;
+    public AudioClip loseSFX;
 
     private float timer;
     private int score;
     private bool isPlaying = false;
+    private bool gameFinished = false;
 
     void Awake()
     {
@@ -37,12 +50,14 @@ public class GameManager : MonoBehaviour
         timer = timeLimit;
         barSlider.maxValue = maxBarValue;
         barSlider.value = 0;
-        endGameUI.SetActive(false);
+
+        winPanel.SetActive(false);
+        losePanel.SetActive(false);
     }
 
     void Update()
     {
-        if (!isPlaying) return;
+        if (!isPlaying || gameFinished) return;
 
         timer -= Time.deltaTime;
         timeText.text = "Time: " + timer.ToString("F1");
@@ -61,7 +76,7 @@ public class GameManager : MonoBehaviour
 
     public void CollectFood(Fooditemm food)
     {
-        if (!isPlaying) return;
+        if (!isPlaying || gameFinished) return;
 
         if (food.foodType == FoodTP.Healthy)
         {
@@ -77,33 +92,56 @@ public class GameManager : MonoBehaviour
         barSlider.value = currentBarValue;
     }
 
-    void FinishLevel(bool success)
+    void FinishLevel(bool win)
     {
+        gameFinished = true;
         isPlaying = false;
-        endGameUI.SetActive(true);
 
-        endTimeText.text = "Sisa Waktu : " + timer.ToString("F1");
-        endPointText.text = "Point : " + score;
+        if (win)
+        {
+            winPanel.SetActive(true);
+            winTimeText.text = "Sisa Waktu : " + timer.ToString("F1");
+            winPointText.text = "Point : " + score;
 
-        StartCoroutine(LevelDelay(success));
+            PlaySFX(winSFX);
+        }
+        else
+        {
+            losePanel.SetActive(true);
+            loseTimeText.text = "Waktu Habis!";
+            losePointText.text = "Point : " + score;
+
+            PlaySFX(loseSFX);
+        }
+
+        StartCoroutine(LevelDelay(win));
     }
 
-    System.Collections.IEnumerator LevelDelay(bool success)
+    void PlaySFX(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.Stop();
+            audioSource.PlayOneShot(clip);
+        }
+    }
+
+    System.Collections.IEnumerator LevelDelay(bool win)
     {
         yield return new WaitForSeconds(delayAfterFinish);
 
-        if (success)
+        if (win)
             NextLevel();
         else
             Retry();
     }
 
-    void NextLevel()
+    public void NextLevel()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 
-    void Retry()
+    public void Retry()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
