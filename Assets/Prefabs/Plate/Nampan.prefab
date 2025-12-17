@@ -122,12 +122,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   progressBar: {fileID: 0}
-  foodsOnPlate:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  maxItems: 4
+  foods: []
+  emptyPlatePrefab: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  slotsPerRow: 3
+  rowPattern: 0200000002000000
+  staggerRows: 1
+  staggerOffset: 0.06
+  itemSpacingX: 0.12
+  itemSpacingZ: 0.12
+  itemYOffset: 0.02
 --- !u!114 &2948427337891745351
 MonoBehaviour:
   m_ObjectHideFlags: 0

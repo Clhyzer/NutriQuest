@@ -15,12 +15,17 @@ public class PlayerFoodPickup : MonoBehaviour
 
     public float loseTargetDelay = 0.12f; // delay kecil untuk menghindari berkedip
 
+    // NPC give settings
+    public float npcGiveRange = 2f; // distance for giving plate to NPC
+    public LayerMask npcLayer;
+
     private GameObject heldObject;
     private bool isHolding = false;
 
     // aim detection
     private GameObject aimedFood;
     private FoodPlate aimedPlate;
+    private NPCPlateReceiver aimedNPC;
 
     private float lostTimer = 0f;
 
@@ -57,51 +62,104 @@ public class PlayerFoodPickup : MonoBehaviour
 
         GameObject foundFood = null;
         FoodPlate foundPlate = null;
+        NPCPlateReceiver foundNPC = null;
 
-        // SphereCast cek food (abaikan makanan yang sudah di-plate)
+        // SphereCast cek food (abaikan makanan yang sudah di-plate atau yang sedang dipegang)
         if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, foodLayer, QueryTriggerInteraction.Ignore))
         {
             FoodItem food = hit.collider.GetComponentInParent<FoodItem>();
-            if (food != null && food.GetComponentInParent<FoodPlate>() == null) foundFood = food.gameObject;
+            if (food != null && food.GetComponentInParent<FoodPlate>() == null && !IsPartOfHeldObject(food.gameObject))
+                foundFood = food.gameObject;
         }
 
-        // cek plate selalu (agar bisa diambil ketika penuh)
+        // cek plate selalu (agar bisa diambil ketika penuh) — abaikan plate yang sedang dipegang pemain
         if (Physics.SphereCast(ray, sphereRadius, out hit, pickupRange, plateLayer, QueryTriggerInteraction.Ignore))
         {
-            foundPlate = hit.collider.GetComponentInParent<FoodPlate>();
+            FoodPlate plate = hit.collider.GetComponentInParent<FoodPlate>();
+            if (plate != null && !IsPartOfHeldObject(plate.gameObject))
+                foundPlate = plate;
+        }
+
+        // jika sedang memegang nampan, cek NPC untuk memberi (gunakan npcLayer dan npcGiveRange)
+        if (isHolding && heldObject != null && heldObject.GetComponent<FoodPlate>() != null)
+        {
+            int npcMask = npcLayer.value == 0 ? ~0 : npcLayer.value;
+            if (Physics.SphereCast(ray, sphereRadius, out hit, npcGiveRange, npcMask, QueryTriggerInteraction.Ignore))
+            {
+                var npc = hit.collider.GetComponentInParent<NPCPlateReceiver>();
+                if (npc != null && npc.CanReceivePlate())
+                    foundNPC = npc;
+            }
         }
 
         // Prioritas: jika sedang pegang item → plate (untuk ditempatkan), kalau tidak pegang → plate hanya jika bisa diambil, kalau tidak → food
         if (isHolding)
         {
-            if (foundPlate != null)
+            // if player is holding a plate, prefer targeting NPCs to give plate
+            if (heldObject != null && heldObject.GetComponent<FoodPlate>() != null)
             {
-                if (aimedPlate != foundPlate)
+                if (foundNPC != null)
                 {
-                    aimedPlate = foundPlate;
-                    aimedFood = null;
-                    lostTimer = 0f;
-
-                    if (interactIcon != null && !interactIcon.activeSelf)
-                        interactIcon.SetActive(true);
+                    if (aimedNPC != foundNPC)
+                    {
+                        aimedNPC = foundNPC;
+                        aimedFood = null;
+                        aimedPlate = null;
+                        lostTimer = 0f;
+                        if (interactIcon != null && !interactIcon.activeSelf)
+                            interactIcon.SetActive(true);
+                    }
+                    else
+                    {
+                        lostTimer = 0f;
+                    }
                 }
                 else
                 {
-                    lostTimer = 0f;
+                    if (aimedNPC != null)
+                    {
+                        lostTimer += Time.deltaTime;
+                        if (lostTimer >= loseTargetDelay)
+                        {
+                            aimedNPC = null;
+                            if (interactIcon != null && interactIcon.activeSelf)
+                                interactIcon.SetActive(false);
+                        }
+                    }
                 }
             }
             else
             {
-                // nothing / keep previous until lost
-                if (aimedFood != null || aimedPlate != null)
+                // holding a food item -> target plates for placement (existing behavior)
+                if (foundPlate != null)
                 {
-                    lostTimer += Time.deltaTime;
-                    if (lostTimer >= loseTargetDelay)
+                    if (aimedPlate != foundPlate)
                     {
+                        aimedPlate = foundPlate;
                         aimedFood = null;
-                        aimedPlate = null;
-                        if (interactIcon != null && interactIcon.activeSelf)
-                            interactIcon.SetActive(false);
+                        lostTimer = 0f;
+
+                        if (interactIcon != null && !interactIcon.activeSelf)
+                            interactIcon.SetActive(true);
+                    }
+                    else
+                    {
+                        lostTimer = 0f;
+                    }
+                }
+                else
+                {
+                    // nothing / keep previous until lost
+                    if (aimedFood != null || aimedPlate != null)
+                    {
+                        lostTimer += Time.deltaTime;
+                        if (lostTimer >= loseTargetDelay)
+                        {
+                            aimedFood = null;
+                            aimedPlate = null;
+                            if (interactIcon != null && interactIcon.activeSelf)
+                                interactIcon.SetActive(false);
+                        }
                     }
                 }
             }
@@ -114,6 +172,7 @@ public class PlayerFoodPickup : MonoBehaviour
                 {
                     aimedPlate = foundPlate;
                     aimedFood = null;
+                    aimedNPC = null;
                     lostTimer = 0f;
 
                     if (interactIcon != null && !interactIcon.activeSelf)
@@ -130,6 +189,7 @@ public class PlayerFoodPickup : MonoBehaviour
                 {
                     aimedFood = foundFood;
                     aimedPlate = null;
+                    aimedNPC = null;
                     lostTimer = 0f;
 
                     if (interactIcon != null && !interactIcon.activeSelf)
@@ -142,13 +202,14 @@ public class PlayerFoodPickup : MonoBehaviour
             }
             else
             {
-                if (aimedFood != null || aimedPlate != null)
+                if (aimedFood != null || aimedPlate != null || aimedNPC != null)
                 {
                     lostTimer += Time.deltaTime;
                     if (lostTimer >= loseTargetDelay)
                     {
                         aimedFood = null;
                         aimedPlate = null;
+                        aimedNPC = null;
                         if (interactIcon != null && interactIcon.activeSelf)
                             interactIcon.SetActive(false);
                     }
@@ -200,7 +261,22 @@ public class PlayerFoodPickup : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.E))
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position, pickupRange);
+            // prefer the aimed NPC (what the player is looking at)
+            if (aimedNPC != null)
+            {
+                aimedNPC.ReceivePlate();
+                Destroy(heldObject);
+                heldObject = null;
+                isHolding = false;
+
+                if (interactIcon != null && interactIcon.activeSelf)
+                    interactIcon.SetActive(false);
+
+                aimedNPC = null;
+                return;
+            }
+
+            Collider[] hits = Physics.OverlapSphere(transform.position, npcGiveRange, npcLayer);
 
             foreach (Collider col in hits)
             {
@@ -263,5 +339,13 @@ public class PlayerFoodPickup : MonoBehaviour
         // reset held state (food now parented to the plate)
         heldObject = null;
         isHolding = false;
+    }
+
+    // helper: apakah objek yang kena raycast merupakan bagian dari objek yang sedang dipegang
+    bool IsPartOfHeldObject(GameObject obj)
+    {
+        if (heldObject == null || obj == null) return false;
+        if (obj == heldObject) return true;
+        return obj.transform.IsChildOf(heldObject.transform);
     }
 }

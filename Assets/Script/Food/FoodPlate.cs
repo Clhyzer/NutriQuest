@@ -11,7 +11,12 @@ public class FoodPlate : MonoBehaviour
     public Transform spawnPoint;
 
     [Header("Layout")]
-    public int slotsPerRow = 3; // max items per row on the plate
+    public int slotsPerRow = 3; // fallback if rowPattern is empty
+    public int[] rowPattern = new int[] { 2, 2 }; // pattern e.g. 2, then 2
+    public bool forceSingleRow = false; // if true, use singleRowCount as repeated row length
+    public int singleRowCount = 2; // used when forceSingleRow is true (e.g. 2 means 2 items per row)
+    public bool staggerRows = true; // if true, stagger alternating rows to avoid straight columns
+    public float staggerOffset = 0.06f; // how much to offset staggered rows (local units)
     public float itemSpacingX = 0.12f;
     public float itemSpacingZ = 0.12f;
     public float itemYOffset = 0.02f; // slight y offset per row to prevent z-fighting
@@ -101,5 +106,68 @@ public class FoodPlate : MonoBehaviour
         }
 
         if (progressBar != null) progressBar.ResetBar();
+    }
+
+    // --- helper layout methods ---
+    void GetRowColFromIndex(int index, out int row, out int col)
+    {
+        row = 0; col = 0;
+        if (index < 0) return;
+
+        int remaining = index;
+        for (int i = 0; i < rowPattern.Length; i++)
+        {
+            int len = Mathf.Max(1, rowPattern[i]);
+            if (remaining < len)
+            {
+                row = i;
+                col = remaining;
+                return;
+            }
+            remaining -= len;
+        }
+
+        int lastLen = rowPattern.Length > 0 ? Mathf.Max(1, rowPattern[rowPattern.Length - 1]) : Mathf.Max(1, slotsPerRow);
+        row = rowPattern.Length + (remaining / lastLen);
+        col = remaining % lastLen;
+    }
+
+    int GetRowsUsed(int itemCount)
+    {
+        if (itemCount <= 0) return 0;
+        if (forceSingleRow)
+        {
+            int len = Mathf.Max(1, singleRowCount);
+            return Mathf.CeilToInt((float)itemCount / len);
+        }
+        int remaining = itemCount;
+        int used = 0;
+        for (int i = 0; i < rowPattern.Length; i++)
+        {
+            int len = Mathf.Max(1, rowPattern[i]);
+            if (remaining > 0)
+            {
+                remaining -= len;
+                used++;
+            }
+            else break;
+        }
+        if (remaining > 0)
+        {
+            int lastLen = rowPattern.Length > 0 ? Mathf.Max(1, rowPattern[rowPattern.Length - 1]) : Mathf.Max(1, slotsPerRow);
+            used += Mathf.CeilToInt((float)remaining / lastLen);
+        }
+        return used;
+        return used;
+    }
+
+    int GetRowLength(int row)
+    {
+        if (row < 0) return Mathf.Max(1, slotsPerRow);
+        if (row < rowPattern.Length)
+            return Mathf.Max(1, rowPattern[row]);
+        if (rowPattern.Length > 0)
+            return Mathf.Max(1, rowPattern[rowPattern.Length - 1]);
+        return Mathf.Max(1, slotsPerRow);
     }
 }
