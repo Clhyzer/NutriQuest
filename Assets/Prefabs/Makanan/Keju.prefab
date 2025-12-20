@@ -64,6 +64,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Keju
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -74,6 +78,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8518777218585438483}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7608845542629786203}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -6675364961181493888}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2435894680637345848}
   m_SourcePrefab: {fileID: 100100000, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}
 --- !u!1 &5631001957415127542 stripped
 GameObject:
@@ -115,3 +128,53 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   foodType: 0
   highlightBorder: {fileID: 0}
+--- !u!114 &7608845542629786203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5631001957415127542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f809da6dd156bb64aa9636e2455ccefd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foodName: 
+  foodType: 0
+  heightOffset: 0.03
+--- !u!114 &-6675364961181493888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5631001957415127542}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc4307c679433a4f98fe2a332dd9b2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  foodType: 0
+--- !u!64 &2435894680637345848
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5631001957415127542}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -2747730218276828863, guid: 7cff5e2ad73f8844f9e6057b8144fc5f, type: 3}

@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.1556
+      value: 0.8777822
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.1556
+      value: 0.8777822
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.1556
+      value: 0.8777822
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26,7 +26,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.23
+      value: 0.48235
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8ffcd4a81d490ff4f86b2c3631eca23a, type: 3}
       propertyPath: m_LocalPosition.z
@@ -99,6 +99,12 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  waypointClearRadius: 0.8
+  waypointSampleAttempts: 8
+  npcLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  agentClearRadiusMultiplier: 1
   animator: {fileID: 5198204338607304433}
 --- !u!195 &261764938690547797
 NavMeshAgent:

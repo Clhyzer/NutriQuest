@@ -6,9 +6,24 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 364de1e867791a64b9f832e78840f021
+  - enabled: 1
+    path: Assets/Scenes/Quest.unity
+    guid: c7ee5987739d70d4da611d5470aee013
+  - enabled: 1
     path: Assets/Scenes/Plate.unity
     guid: fbda0c74b682087409103f81b4f3955f
   - enabled: 1
-    path: Assets/Scenes/MainMenu.unity
-    guid: 364de1e867791a64b9f832e78840f021
+    path: Assets/Scenes/Quest 1.unity
+    guid: 9efcef6373ee820458c1099e04bfb24a
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/Scenes/Quest 2.unity
+    guid: fc2ac5eb8b1784c44a40f1588a09df1f
+  - enabled: 1
+    path: Assets/Scenes/SampleScene 1.unity
+    guid: 7fa44199f8fac344a9bc716b6635b961
   m_configObjects: {}
